@@ -4,14 +4,17 @@ import phoenix6 as phx
 import wpilib
 
 from fridowpy.joysticks.xbox_controller import XboxController
+# from fridowpy import nt
 from src.drive.motors import Motors
 
 SPEED_FACTOR: float = 1.0 / 5.0
 MAX_SPEED: float = 1.0
+TURN_FACTOR: float = 1.0 / 3.0
+MAX_TURN_SPEED: float = 1.0
 
-def scale_speed(s: float) -> float:
+def scale_speed(s: float, factor: float = 1.0, limit: float = 1.0) -> float:
     sigmoid = lambda s: 2 / (1 + np.float_power(np.e, -s)) - 1
-    return max(-MAX_SPEED, min(MAX_SPEED, sigmoid(s)))
+    return max(-limit, min(limit, sigmoid(s)))
 
 class MainRobot(wpilib.TimedRobot):
 
@@ -26,10 +29,11 @@ class MainRobot(wpilib.TimedRobot):
         self.joystick = XboxController(0)
 
     def teleopPeriodic(self):
-        fwd = -scale_speed(self.joystick.getForward())
-        # rot = self.joystick.getRight()
-        rot = 0
+        fwd = -scale_speed(self.joystick.getForward(), SPEED_FACTOR, MAX_SPEED)
+        rot = scale_speed(self.joystick.getRight(), TURN_FACTOR, MAX_TURN_SPEED)
 
+        # nt.publish("/drive/fwd", fwd)
+        # nt.publish("/drive/rot", fwd)
         self.motors.drive(fwd, rot)
 
     def _simulationPeriodic(self):
